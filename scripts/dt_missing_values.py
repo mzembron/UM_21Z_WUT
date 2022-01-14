@@ -1,8 +1,15 @@
 import numpy as np
 import pandas as pd
+import os
+from probabilistic_predictor import ProbabilisticPredictor
 
+# path to data
+dirname = os.path.dirname(__file__)
+filename = os.path.join(dirname, '..\\data\\iris.csv')
+
+# data handling 
 col_names = ["sepal.length","sepal.width","petal.length","petal.width","variety"]
-data = pd.read_csv("iris.csv", skiprows=1, header=None, names=col_names)
+data = pd.read_csv(filename, skiprows=1, header=None, names=col_names)
 data.head(10)
 # print(data)
 
@@ -177,12 +184,26 @@ class DecisionTreeClassifier():
                 return self.make_prediction(x, tree.right, probability)
         ## ELSE 
         else:
-            full_dataset = np.concatenate(tree.left_dataset, tree.right_dataset)
+            full_dataset = np.concatenate((tree.left_dataset, tree.right_dataset), axis = 0)
+            unique_names = np.unique(full_dataset[:,-1])
+            unique_names_dict = {}
+            for u_name in unique_names:
+                unique_names_dict[u_name] = 0
+            
+            prob_predict = ProbabilisticPredictor(unique_names_dict, tree)
+            prob_predict.fill_probabilites(x, tree)
+            return prob_predict.return_most_possible()
+
+            
+
+
+
+
             left_num_of_elements = len(tree.left_dataset)
             right_num_of_elements = len(tree.right_dataset)
             probability_of_left_branch = probability*left_num_of_elements/(right_num_of_elements + left_num_of_elements)
             probability_of_right_branch = probability*right_num_of_elements/(right_num_of_elements + left_num_of_elements)
-            
+
             #FULLY PROBABILISTIC APPROACH 
             ## creating list of probabilities - only once if first missing value was found 
 
@@ -192,11 +213,11 @@ class DecisionTreeClassifier():
             #  
             # END OF FULLY PROBABILISTIC APPROACH
 
-            if probability_of_left_branch > probability_of_right_branch:
-                return self.make_prediction(x, tree.left, probability)
-            
-            else: 
-                return self.make_prediction(x, tree.right, probability)
+            # if probability_of_left_branch > probability_of_right_branch:
+            #     return self.make_prediction(x, tree.left, probability)
+
+            # else: 
+            #     return self.make_prediction(x, tree.right, probability)
 
 
 
@@ -206,7 +227,7 @@ class DecisionTreeClassifier():
 
     def is_missing(self, feature_val):
         '''' checking if value is not missing'''    
-        if feature_val == "NaN" or feature_val == "nan":
+        if str(feature_val) == "NaN" or str(feature_val) == "nan":
             return True
         else:
             return False
@@ -226,7 +247,7 @@ classifier.print_tree()
 
 from missing_values_creator import MissingValuesCreator
 
-missing_values_creator = MissingValuesCreator()
+missing_values_creator = MissingValuesCreator(30)
 
 X_test_missing = missing_values_creator.add_missing_values(X_test, 2)
 
