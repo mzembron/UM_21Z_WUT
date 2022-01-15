@@ -5,12 +5,21 @@ from probabilistic_predictor import ProbabilisticPredictor
 
 # path to data
 dirname = os.path.dirname(__file__)
-filename = os.path.join(dirname, '..\\data\\iris.csv')
+filename_iris = os.path.join(dirname, '../data/iris.csv')
+filename_wine = os.path.join(dirname, '../data/wine.csv')
 
 # data handling 
-col_names = ["sepal.length","sepal.width","petal.length","petal.width","variety"]
-data = pd.read_csv(filename, skiprows=1, header=None, names=col_names)
-data.head(10)
+
+''' uncoment any data you are willing to use  '''
+
+''' irises '''
+# col_names_iris = ["sepal.length","sepal.width","petal.length","petal.width","variety"]
+# data = pd.read_csv(filename_iris, skiprows=1, header=None, names=col_names_iris)
+
+''' wines '''
+col_names_wine = ["type","alcohol","malic.acid","ash","alcalinity.of.ash","magnesium","total.phenols","flavanoids","nonflavanoid.phenols","proanthocyanins","color.intensity","hue","OD280/OD315.of.diluted.wines","proline"]
+data = pd.read_csv(filename_wine, skiprows=1, header=None, sep = ';',names=col_names_wine)
+data = data[["alcohol","malic.acid","ash","alcalinity.of.ash","magnesium","total.phenols","flavanoids","nonflavanoid.phenols","proanthocyanins","color.intensity","hue","OD280/OD315.of.diluted.wines","proline","type"]]
 # print(data)
 
 class Node():
@@ -30,20 +39,24 @@ class Node():
         self.deafult_value_for_missing_values = deafult_value_for_missing_values
 
 class DecisionTreeClassifier():
-    def __init__(self, min_samples_split=2, max_depth=2):
+    def __init__(self, min_samples_split=2, max_depth=2, missing_values_predictor = 1):
         ''' constructor '''
-        
         # initialize the root of the tree 
         self.root = None
         
         # stopping conditions
         self.min_samples_split = min_samples_split
         self.max_depth = max_depth
+        # variable missing_values_predictor determines approach to missing values 
+        # default value: 1 - probabilistic approach 
+        # anything else: naive probabilistic approach 
+        # details explained in make_prediction() function 
+        self.missing_values_predictor = missing_values_predictor
         
     def build_tree(self, dataset, curr_depth=0):
         ''' recursive function to build the tree ''' 
         
-        X, Y = dataset[:,:-1], dataset[:,-1]
+        X, Y = dataset[:,:-1], dataset[:,-1] #matrix dimension
         num_samples, num_features = np.shape(X)
         
         # split until stopping conditions are met
@@ -184,45 +197,29 @@ class DecisionTreeClassifier():
                 return self.make_prediction(x, tree.right, probability)
         ## ELSE 
         else:
-            full_dataset = np.concatenate((tree.left_dataset, tree.right_dataset), axis = 0)
-            unique_names = np.unique(full_dataset[:,-1])
-            unique_names_dict = {}
-            for u_name in unique_names:
-                unique_names_dict[u_name] = 0
-            
-            prob_predict = ProbabilisticPredictor(unique_names_dict, tree)
-            prob_predict.fill_probabilites(x, tree)
-            return prob_predict.return_most_possible()
+            if self.missing_values_predictor == 1:
 
-            
+                full_dataset = np.concatenate((tree.left_dataset, tree.right_dataset), axis = 0)
+                unique_names = np.unique(full_dataset[:,-1])
+                unique_names_dict = {}
+                for u_name in unique_names:
+                    unique_names_dict[u_name] = 0
+                
+                prob_predict = ProbabilisticPredictor(unique_names_dict, tree)
+                prob_predict.fill_probabilites(x, tree)
+                return prob_predict.return_most_possible()
 
+            else:
+                left_num_of_elements = len(tree.left_dataset)
+                right_num_of_elements = len(tree.right_dataset)
+                probability_of_left_branch = probability*left_num_of_elements/(right_num_of_elements + left_num_of_elements)
+                probability_of_right_branch = probability*right_num_of_elements/(right_num_of_elements + left_num_of_elements)
 
+                if probability_of_left_branch > probability_of_right_branch:
+                    return self.make_prediction(x, tree.left, probability)
 
-
-            left_num_of_elements = len(tree.left_dataset)
-            right_num_of_elements = len(tree.right_dataset)
-            probability_of_left_branch = probability*left_num_of_elements/(right_num_of_elements + left_num_of_elements)
-            probability_of_right_branch = probability*right_num_of_elements/(right_num_of_elements + left_num_of_elements)
-
-            #FULLY PROBABILISTIC APPROACH 
-            ## creating list of probabilities - only once if first missing value was found 
-
-            # if probability == 1:
-            #     for feature in x:
-            ##TODO: create class finding best fit for element with missing values 
-            #  
-            # END OF FULLY PROBABILISTIC APPROACH
-
-            # if probability_of_left_branch > probability_of_right_branch:
-            #     return self.make_prediction(x, tree.left, probability)
-
-            # else: 
-            #     return self.make_prediction(x, tree.right, probability)
-
-
-
-
-
+                else: 
+                    return self.make_prediction(x, tree.right, probability)
 
 
     def is_missing(self, feature_val):
@@ -232,27 +229,6 @@ class DecisionTreeClassifier():
         else:
             return False
 
-    def make_prediction_with_missing_value(self, x, tree):
-        pass
-X = data.iloc[:, :-1].values
-Y = data.iloc[:, -1].values.reshape(-1,1)
 
-
-from sklearn.model_selection import train_test_split
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=.2, random_state=41)
-
-classifier = DecisionTreeClassifier(min_samples_split=3, max_depth=np.inf) #there is no constraint on decision tree depth
-classifier.fit(X_train,Y_train)
-classifier.print_tree()
-
-from missing_values_creator import MissingValuesCreator
-
-missing_values_creator = MissingValuesCreator(30)
-
-X_test_missing = missing_values_creator.add_missing_values(X_test, 2)
-
-Y_pred = classifier.predict(X_test_missing) 
-from sklearn.metrics import accuracy_score
-print(accuracy_score(Y_test, Y_pred))
 
 
