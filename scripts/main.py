@@ -18,20 +18,20 @@ filename_cancer = os.path.join(dirname, '../data/breast_cancer.csv')
 ''' uncoment any data you are willing to use  '''
 
 ''' irises '''
-# col_names_iris = ["sepal.length","sepal.width","petal.length","petal.width","variety"]
-# data = pd.read_csv(filename_iris, skiprows=1, header=None, names=col_names_iris)
+col_names_iris = ["sepal.length","sepal.width","petal.length","petal.width","variety"]
+data = pd.read_csv(filename_iris, skiprows=1, header=None, names=col_names_iris)
 
 ''' wines '''
-col_names_wine = ["type","alcohol","malic.acid","ash","alcalinity.of.ash","magnesium","total.phenols","flavanoids","nonflavanoid.phenols","proanthocyanins","color.intensity","hue","OD280/OD315.of.diluted.wines","proline"]
-data = pd.read_csv(filename_wine, skiprows=1, header=None, sep = ';',names=col_names_wine)
-# reconfiguring order of columns - values of elements as last column 
-data = data[["alcohol","malic.acid","ash","alcalinity.of.ash","magnesium","total.phenols","flavanoids","nonflavanoid.phenols","proanthocyanins","color.intensity","hue","OD280/OD315.of.diluted.wines","proline","type"]]
+# col_names_wine = ["type","alcohol","malic.acid","ash","alcalinity.of.ash","magnesium","total.phenols","flavanoids","nonflavanoid.phenols","proanthocyanins","color.intensity","hue","OD280/OD315.of.diluted.wines","proline"]
+# data = pd.read_csv(filename_wine, skiprows=1, header=None, sep = ';',names=col_names_wine)
+# # reconfiguring order of columns - values of elements as last column 
+# data = data[["alcohol","malic.acid","ash","alcalinity.of.ash","magnesium","total.phenols","flavanoids","nonflavanoid.phenols","proanthocyanins","color.intensity","hue","OD280/OD315.of.diluted.wines","proline","type"]]
 
 ''' breast cancer '''
-data = pd.read_csv(filename_cancer, skiprows=1, header=None, sep = ';')
-# reconfiguring order of columns - values of elements as last column 
-data_order = np.linspace(2, 31, num = 30, dtype = int).tolist() + [1]
-data = data[data_order]
+# data = pd.read_csv(filename_cancer, skiprows=1, header=None, sep = ';')
+# # reconfiguring order of columns - values of elements as last column 
+# data_order = np.linspace(2, 31, num = 30, dtype = int).tolist() + [1]
+# data = data[data_order]
 
 
 
@@ -51,9 +51,11 @@ classifier1.fit(X_train,Y_train)
 classifier1.print_tree()
 
 
-missing_values_creator = MissingValuesCreator(100)
+missing_values_creator = MissingValuesCreator(70)
 
-X_test_missing =  missing_values_creator.add_missing_values(missing_values_creator.add_missing_values(missing_values_creator.add_missing_values(X_test, 7),20), 13)
+X_test_missing =  missing_values_creator.add_missing_values(missing_values_creator.add_missing_values(X_test, 1),2)
+X_test_missing2 = missing_values_creator.add_missing_values_by_list(X_test, [1,2,3])
+
 
 Y_pred = classifier.predict(X_test_missing) 
 Y_pred1 = classifier1.predict(X_test_missing) 

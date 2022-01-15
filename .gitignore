@@ -1,0 +1,7 @@
+.pytest_cache
+
+scripts/__pycache__
+
+scripts/costam.py
+
+scripts/tempCodeRunnerFile.py
