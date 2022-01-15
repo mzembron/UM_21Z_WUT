@@ -10,6 +10,8 @@ import os
 dirname = os.path.dirname(__file__)
 filename_iris = os.path.join(dirname, '../data/iris.csv')
 filename_wine = os.path.join(dirname, '../data/wine.csv')
+filename_cancer = os.path.join(dirname, '../data/breast_cancer.csv')
+
 
 # data handling 
 
@@ -22,8 +24,16 @@ filename_wine = os.path.join(dirname, '../data/wine.csv')
 ''' wines '''
 col_names_wine = ["type","alcohol","malic.acid","ash","alcalinity.of.ash","magnesium","total.phenols","flavanoids","nonflavanoid.phenols","proanthocyanins","color.intensity","hue","OD280/OD315.of.diluted.wines","proline"]
 data = pd.read_csv(filename_wine, skiprows=1, header=None, sep = ';',names=col_names_wine)
+# reconfiguring order of columns - values of elements as last column 
 data = data[["alcohol","malic.acid","ash","alcalinity.of.ash","magnesium","total.phenols","flavanoids","nonflavanoid.phenols","proanthocyanins","color.intensity","hue","OD280/OD315.of.diluted.wines","proline","type"]]
-# print(data)
+
+''' breast cancer '''
+data = pd.read_csv(filename_cancer, skiprows=1, header=None, sep = ';')
+# reconfiguring order of columns - values of elements as last column 
+data_order = np.linspace(2, 31, num = 30, dtype = int).tolist() + [1]
+data = data[data_order]
+
+
 
 X = data.iloc[:, :-1].values
 Y = data.iloc[:, -1].values.reshape(-1,1)
@@ -41,12 +51,15 @@ classifier1.fit(X_train,Y_train)
 classifier1.print_tree()
 
 
-missing_values_creator = MissingValuesCreator(20)
+missing_values_creator = MissingValuesCreator(100)
 
-X_test_missing =  missing_values_creator.add_missing_values(missing_values_creator.add_missing_values(missing_values_creator.add_missing_values(missing_values_creator.add_missing_values(X_test, 9),6),11),2)
+X_test_missing =  missing_values_creator.add_missing_values(missing_values_creator.add_missing_values(missing_values_creator.add_missing_values(X_test, 7),20), 13)
 
 Y_pred = classifier.predict(X_test_missing) 
 Y_pred1 = classifier1.predict(X_test_missing) 
+
+# Y_pred = classifier.predict(X_test) 
+# Y_pred1 = classifier1.predict(X_test) 
 
 print(accuracy_score(Y_test, Y_pred))
 print(accuracy_score(Y_test, Y_pred1))
