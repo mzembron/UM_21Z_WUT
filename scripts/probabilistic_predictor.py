@@ -1,16 +1,24 @@
+###################################################
+#   Author: Mateusz Zembron                       #
+###################################################
+
+
 import numpy as np
 import pandas as pd
 
 class ProbabilisticPredictor:
     def __init__(self, unique_names_probability_dict, tree):
+        ''' class for handling probabilistic approach '''
         self.name_probability_dict = unique_names_probability_dict
         self.tree = tree
 
-    def fill_probabilites(self, x, tree, probability = 1,):
+
+    def fill_probabilites(self, x, tree, probability = 1):
+        ''' recursive function to fill name_probabiliti_dict '''
         if tree.value!=None: 
             # one of possible leaves was reached, adding probability to dictionary
             self.name_probability_dict[tree.value] = self.name_probability_dict[tree.value] + probability
-        
+    
         else:
             feature_val = x[tree.feature_index]
             if not self.is_missing(feature_val):

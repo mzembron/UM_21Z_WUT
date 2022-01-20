@@ -1,29 +1,15 @@
+###################################################
+#   Author: Mateusz Zembron                       #
+###################################################
+
+
 import numpy as np
 import pandas as pd
-import os
 from probabilistic_predictor import ProbabilisticPredictor
 
-# path to data
-dirname = os.path.dirname(__file__)
-filename_iris = os.path.join(dirname, '../data/iris.csv')
-filename_wine = os.path.join(dirname, '../data/wine.csv')
-
-# data handling 
-
-''' uncoment any data you are willing to use  '''
-
-''' irises '''
-# col_names_iris = ["sepal.length","sepal.width","petal.length","petal.width","variety"]
-# data = pd.read_csv(filename_iris, skiprows=1, header=None, names=col_names_iris)
-
-''' wines '''
-col_names_wine = ["type","alcohol","malic.acid","ash","alcalinity.of.ash","magnesium","total.phenols","flavanoids","nonflavanoid.phenols","proanthocyanins","color.intensity","hue","OD280/OD315.of.diluted.wines","proline"]
-data = pd.read_csv(filename_wine, skiprows=1, header=None, sep = ';',names=col_names_wine)
-data = data[["alcohol","malic.acid","ash","alcalinity.of.ash","magnesium","total.phenols","flavanoids","nonflavanoid.phenols","proanthocyanins","color.intensity","hue","OD280/OD315.of.diluted.wines","proline","type"]]
-# print(data)
 
 class Node():
-    def __init__(self, feature_index = None, threshold=None, left = None, left_dataset = None ,right=None,right_dataset = None , info_gain=None, value=None, deafult_value_for_missing_values = None):
+    def __init__(self, feature_index = None, threshold=None, left = None, left_dataset = None ,right=None,right_dataset = None , info_gain=None, value=None, final_leaf_dataset = None):
         #for decision node
         self.feature_index = feature_index
         self.threshold = threshold
@@ -36,9 +22,9 @@ class Node():
 
         #for leaf node
         self.value = value
-        self.deafult_value_for_missing_values = deafult_value_for_missing_values
+        self.final_leaf_dataset = final_leaf_dataset
 
-class DecisionTreeClassifier():
+class DecisionTreeWithMissingValuesClassifier():
     def __init__(self, min_samples_split=2, max_depth=2, missing_values_predictor = 1):
         ''' constructor '''
         # initialize the root of the tree 
@@ -77,7 +63,7 @@ class DecisionTreeClassifier():
         # compute leaf node
         leaf_value = self.calculate_leaf_value(Y)
         # return leaf node
-        return Node(value=leaf_value)
+        return Node(value=leaf_value, final_leaf_dataset= Y)
     
     def get_best_split(self, dataset, num_samples, num_features):
         ''' function to find the best split '''
@@ -198,17 +184,18 @@ class DecisionTreeClassifier():
         ## ELSE 
         else:
             if self.missing_values_predictor == 1:
-
+                #creating dictionary with unique values of elements
                 full_dataset = np.concatenate((tree.left_dataset, tree.right_dataset), axis = 0)
                 unique_names = np.unique(full_dataset[:,-1])
                 unique_names_dict = {}
                 for u_name in unique_names:
                     unique_names_dict[u_name] = 0
                 
+                
                 prob_predict = ProbabilisticPredictor(unique_names_dict, tree)
                 prob_predict.fill_probabilites(x, tree)
                 return prob_predict.return_most_possible()
-
+                
             else:
                 left_num_of_elements = len(tree.left_dataset)
                 right_num_of_elements = len(tree.right_dataset)
