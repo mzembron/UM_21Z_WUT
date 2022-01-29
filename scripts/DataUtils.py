@@ -1,3 +1,7 @@
+###################################################
+#   Author: Daniel Adamkowski                     #
+###################################################
+
 import random
 from enum import Enum, auto
 
@@ -21,16 +25,17 @@ def load_data(dataset_name):
     raise TypeError
 
 
-def create_missing_data(dataset, malformed_rows_percentage=10, max_malformed_in_row=1):
+def create_missing_data(dataset, malformed_rows_percentage=10, malformed_in_row=1):
     rows, cols = dataset.shape
     assert 0 <= malformed_rows_percentage <= 100
-    assert max_malformed_in_row < cols
+    assert malformed_in_row < cols
 
     missing_limit = (rows * malformed_rows_percentage) // 100
     row_indices = random.sample(range(rows), missing_limit)
     for missing in row_indices:
-        for cell in range(random.randrange(max_malformed_in_row) + 1):
-            dataset[missing][random.randrange(cols)] = np.nan
+        remove = random.sample(range(cols), malformed_in_row)
+        for cell in range(malformed_in_row):
+            dataset[missing][remove] = np.nan
 
 
 def fill_missing_data(dataset, strategy):

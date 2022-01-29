@@ -1,5 +1,6 @@
 ###################################################
 #   Author: Mateusz Zembron                       #
+#   Author: Daniel Adamkowski                     #
 ###################################################
 
 
@@ -7,15 +8,14 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-from missing_values_creator import MissingValuesCreator
 from dt_missing_values import DecisionTreeWithMissingValuesClassifier
 import os
 
-from matplotlib import pyplot as plt
-from sklearn import datasets
-from sklearn.tree import DecisionTreeClassifier 
+from sklearn.tree import DecisionTreeClassifier
 from sklearn import tree
 
+from scripts.CartSurrogateSplitters import CartSurrogateSplitters
+from scripts.DataUtils import load_data
 
 
 # path to data
@@ -41,16 +41,16 @@ filename_cancer = os.path.join(dirname, '../data/breast_cancer.csv')
 # data = pd.read_csv(filename_iris_reduced, skiprows=1, header=None, names=col_names_iris)
 
 ''' wines '''
-col_names_wine = ["type","alcohol","malic.acid","ash","alcalinity.of.ash","magnesium","total.phenols","flavanoids","nonflavanoid.phenols","proanthocyanins","color.intensity","hue","OD280/OD315.of.diluted.wines","proline"]
-data = pd.read_csv(filename_wine, skiprows=1, header=None, sep = ';',names=col_names_wine)
+# col_names_wine = ["type","alcohol","malic.acid","ash","alcalinity.of.ash","magnesium","total.phenols","flavanoids","nonflavanoid.phenols","proanthocyanins","color.intensity","hue","OD280/OD315.of.diluted.wines","proline"]
+# data = pd.read_csv(filename_wine, skiprows=1, header=None, sep = ';',names=col_names_wine)
 # reconfiguring order of columns - values of elements as last column 
-data = data[["alcohol","malic.acid","ash","alcalinity.of.ash","magnesium","total.phenols","flavanoids","nonflavanoid.phenols","proanthocyanins","color.intensity","hue","OD280/OD315.of.diluted.wines","proline","type"]]
+# data = data[["alcohol","malic.acid","ash","alcalinity.of.ash","magnesium","total.phenols","flavanoids","nonflavanoid.phenols","proanthocyanins","color.intensity","hue","OD280/OD315.of.diluted.wines","proline","type"]]
 
 ''' breast cancer '''
-# data = pd.read_csv(filename_cancer, skiprows=1, header=None, sep = ';')
+data = pd.read_csv(filename_cancer, skiprows=1, header=None, sep = ';')
 # # reconfiguring order of columns - values of elements as last column 
-# data_order = np.linspace(2, 31, num = 30, dtype = int).tolist() + [1]
-# data = data[data_order]
+data_order = np.linspace(2, 31, num = 30, dtype = int).tolist() + [1]
+data = data[data_order]
 
 
 X = data.iloc[:, :-1].values
@@ -72,7 +72,20 @@ model = clf.fit(X_train, Y_train)
 text_representation = tree.export_text(clf)
 print(text_representation)
 
+
+''' implemented CART with surrogate splitters '''
+datasetCART = load_data("cancer")
+dataset_dataCART, dataset_targetCART = datasetCART.data, datasetCART.target
+X_train_CART, X_test_CART, Y_train_CART, Y_test_CART = train_test_split(dataset_dataCART, dataset_targetCART, test_size=.2, random_state=80)
+
+classifierCART = CartSurrogateSplitters(X_train_CART, Y_train_CART)
+predicted_classes = []
+for test_index in range(len(Y_test_CART)):
+    predicted_classes.append(classifierCART.predict(X_test_CART[test_index]))
+
+
 Y_pred = classifier.predict(X_test) 
 Y_pred_ref = model.predict(X_test)
 print("Dokladnosc mojego modelu: ", accuracy_score(Y_test, Y_pred))
-print("Dokladnosc modelu sklearn : ", accuracy_score(Y_test, Y_pred))
+print("Dokladnosc modelu sklearn : ", accuracy_score(Y_test, Y_pred_ref))
+print('Dokładność klasyfikacji: ', accuracy_score(Y_test_CART, predicted_classes))
